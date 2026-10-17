@@ -1,0 +1,11 @@
+{
+  "name": "nepal-news",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "preview": "cd frontend && npm run preview",
+    "start": "cd frontend && npm run preview"
+  }
+}

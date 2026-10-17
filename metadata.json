@@ -1,0 +1,8 @@
+{
+  "name": "नेपाल न्यूज",
+  "description": "नेपाल न्यूज - Breaking news, politics, economy, society, sports, and opinions in Nepali Devanagari with live updates, audio playback, and responsive design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
