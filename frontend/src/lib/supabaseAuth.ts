@@ -378,7 +378,52 @@ export const SupabaseAuth = {
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.message || 'समाचार मेटाउन सकिएन');
+      const msg = data.message || data.error_description || 'समाचार मेटाउन सकिएन';
+      throw new Error(msg);
+    }
+  },
+
+  /**
+   * Admin: Fetch all registered users from public.profiles
+   */
+  async getRegisteredUsers(accessToken?: string): Promise<UserProfile[]> {
+    const endpoint = `${SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc`;
+    const response = await fetch(endpoint, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'प्रयोगकर्ताहरूको सूची लोड गर्न सकिएन');
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  },
+
+  /**
+   * Admin: Update user profile role
+   */
+  async updateUserRole(accessToken: string, userId: string, newRole: 'admin' | 'reader' | 'editor'): Promise<void> {
+    const endpoint = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`;
+    const response = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ role: newRole })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'प्रयोगकर्ताको भूमिका परिवर्तन गर्न सकिएन');
     }
   }
 };

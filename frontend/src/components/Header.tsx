@@ -200,19 +200,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>लगइन / दर्ता</span>
             </button>
           )}
-
-          {/* Admin Direct Shortcut Button */}
-          {(!userProfile || !isAdmin) && (
-            <button
-              onClick={onAdminClick}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white transition-all shadow-sm cursor-pointer ml-1"
-              title="व्यवस्थापक प्यानल (Admin)"
-              aria-label="व्यवस्थापक प्यानल"
-            >
-              <Shield size={14} />
-              <span className="hidden sm:inline">व्यवस्थापक</span>
-            </button>
-          )}
         </div>
       </div>
     </header>

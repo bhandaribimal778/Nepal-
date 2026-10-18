@@ -291,8 +291,11 @@ GRANT SELECT ON public.categories TO anon, authenticated;
 GRANT SELECT ON public.articles TO anon, authenticated;
 GRANT SELECT ON public.profiles TO anon, authenticated;
 
--- Authenticated user permissions
-GRANT UPDATE (full_name, avatar_url, bio) ON public.profiles TO authenticated;
+-- Authenticated permissions (Row Level Security policies govern access)
+GRANT ALL ON public.articles TO authenticated;
+GRANT ALL ON public.categories TO authenticated;
+GRANT ALL ON public.profiles TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 -- Service role bypasses all RLS
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
