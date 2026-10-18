@@ -388,19 +388,6 @@ export const App: React.FC = () => {
                 </button>
               )}
 
-              <button
-                onClick={() => {
-                  if (adminSession && userProfile?.role === 'admin') {
-                    setCurrentRoute({ type: 'admin-dashboard' });
-                  } else {
-                    setCurrentRoute({ type: 'admin-login' });
-                  }
-                }}
-                className="text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors font-semibold"
-              >
-                <Shield size={14} className="text-red-500" />
-                व्यवस्थापक प्यानल (Admin)
-              </button>
               <div className="text-slate-500">
                 © {new Date().getFullYear()} नेपाल न्यूज पोर्टल (Nepal News).
               </div>

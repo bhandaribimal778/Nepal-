@@ -378,7 +378,12 @@ export const SupabaseAuth = {
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      const msg = data.message || data.error_description || 'समाचार मेटाउन सकिएन';
+      let msg = data.message || data.error_description || 'समाचार मेटाउन सकिएन';
+      if (msg.includes('row-level security') || response.status === 403) {
+        msg = 'RLS पहुँच अस्वीकृत: समाचार मेटाउनको लागि तपाईंको खातालाई Supabase profiles मा role = "admin" अधिकार हुनुपर्छ।';
+      } else if (response.status === 401 || msg.includes('JWT expired')) {
+        msg = 'लगइन सेसन समाप्त भयो (JWT expired)। कृपया पुनः लगइन गर्नुहोस्।';
+      }
       throw new Error(msg);
     }
   },
@@ -388,13 +393,23 @@ export const SupabaseAuth = {
    */
   async getRegisteredUsers(accessToken?: string): Promise<UserProfile[]> {
     const endpoint = `${SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc`;
-    const response = await fetch(endpoint, {
+    let response = await fetch(endpoint, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         'Accept': 'application/json'
       }
     });
+
+    // If authenticated request is forbidden or expired, fallback to anon public read
+    if (!response.ok && accessToken) {
+      response = await fetch(endpoint, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Accept': 'application/json'
+        }
+      });
+    }
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));

@@ -44,6 +44,7 @@ fun SearchScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .background(Color(0xFFF8FAFC))
     ) {
         // Search Input Bar
