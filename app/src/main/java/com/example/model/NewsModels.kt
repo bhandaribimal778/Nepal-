@@ -58,5 +58,5 @@ enum class NavigationScreen {
     SEARCH,
     SAVED,
     ARTICLE_DETAIL,
-    ADMIN
+    PROFILE
 }

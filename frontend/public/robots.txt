@@ -1,0 +1,7 @@
+# Nepal News Portal (नेपाल न्यूज) robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /#admin
+
+Sitemap: https://yaawyaimhhfqpnexuxgb.supabase.co/sitemap.xml

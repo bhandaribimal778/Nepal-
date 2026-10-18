@@ -23,7 +23,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
       <div className="relative w-28 h-24 md:w-36 md:h-28 rounded-lg overflow-hidden shrink-0 bg-slate-100">
         <img
           src={article.imageUrl}
-          alt={article.title}
+          alt={article.altText || article.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />

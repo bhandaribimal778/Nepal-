@@ -13,17 +13,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -37,7 +35,6 @@ import com.example.model.NavigationScreen
 import com.example.ui.components.NepalNewsHeader
 import com.example.ui.screens.*
 import com.example.ui.theme.NepalCrimson
-import com.example.ui.theme.NepalNavy
 import com.example.ui.theme.NepalNewsTheme
 import com.example.viewmodel.NewsViewModel
 
@@ -67,7 +64,7 @@ sealed class BottomNavItem(
     data object Categories : BottomNavItem(NavigationScreen.CATEGORIES, "वर्गहरू", Icons.Filled.Category, Icons.Outlined.Category, "nav_categories")
     data object Search : BottomNavItem(NavigationScreen.SEARCH, "खोज", Icons.Filled.Search, Icons.Outlined.Search, "nav_search")
     data object Saved : BottomNavItem(NavigationScreen.SAVED, "सुरक्षित", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder, "nav_saved")
-    data object Admin : BottomNavItem(NavigationScreen.ADMIN, "एडमिन", Icons.Filled.Lock, Icons.Outlined.Lock, "nav_admin")
+    data object Profile : BottomNavItem(NavigationScreen.PROFILE, "खाता", Icons.Filled.Person, Icons.Outlined.Person, "nav_profile")
 }
 
 @Composable
@@ -83,6 +80,15 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
     val audioProgress by viewModel.audioProgress.collectAsState()
     val fontSizeSp by viewModel.articleFontSize.collectAsState()
 
+    val userSession by viewModel.userSession.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsState()
+    val authState by viewModel.authState.collectAsState()
+
+    // Initialize session from shared preferences
+    LaunchedEffect(Unit) {
+        viewModel.initializeAuth(context)
+    }
+
     // Handle Android system back button
     BackHandler(enabled = currentScreen != NavigationScreen.HOME) {
         viewModel.navigateBack()
@@ -93,7 +99,7 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
         BottomNavItem.Categories,
         BottomNavItem.Search,
         BottomNavItem.Saved,
-        BottomNavItem.Admin
+        BottomNavItem.Profile
     )
 
     fun shareArticle(article: Article) {
@@ -109,11 +115,12 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            if (currentScreen != NavigationScreen.ARTICLE_DETAIL && currentScreen != NavigationScreen.ADMIN) {
+            if (currentScreen != NavigationScreen.ARTICLE_DETAIL) {
                 NepalNewsHeader(
                     onSearchClick = { viewModel.navigateTo(NavigationScreen.SEARCH) },
                     onSavedClick = { viewModel.navigateTo(NavigationScreen.SAVED) },
-                    onAdminClick = { viewModel.navigateTo(NavigationScreen.ADMIN) }
+                    onProfileClick = { viewModel.navigateTo(NavigationScreen.PROFILE) },
+                    userProfile = userProfile
                 )
             }
         },
@@ -208,6 +215,30 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                     )
                 }
 
+                NavigationScreen.PROFILE -> {
+                    ProfileScreen(
+                        userSession = userSession,
+                        userProfile = userProfile,
+                        authState = authState,
+                        savedCount = bookmarkedIds.size,
+                        onLoginClick = { email, password ->
+                            viewModel.login(context, email, password)
+                        },
+                        onRegisterClick = { fullName, email, password ->
+                            viewModel.register(context, fullName, email, password)
+                        },
+                        onLogoutClick = {
+                            viewModel.logout(context)
+                        },
+                        onNavigateToSaved = {
+                            viewModel.navigateTo(NavigationScreen.SAVED)
+                        },
+                        onClearError = {
+                            viewModel.clearAuthState()
+                        }
+                    )
+                }
+
                 NavigationScreen.ARTICLE_DETAIL -> {
                     val article = selectedArticle
                     if (article != null) {
@@ -229,16 +260,6 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                     } else {
                         viewModel.navigateBack()
                     }
-                }
-
-                NavigationScreen.ADMIN -> {
-                    AdminScreen(
-                        onBackClick = { viewModel.navigateBack() },
-                        onArticlePublished = {
-                            viewModel.loadNews()
-                            viewModel.navigateBack()
-                        }
-                    )
                 }
             }
         }

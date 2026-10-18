@@ -22,7 +22,7 @@ export const FeaturedStory: React.FC<FeaturedStoryProps> = ({
       <div className="relative h-64 md:h-96 w-full cursor-pointer group" onClick={() => onArticleClick(article)}>
         <img
           src={article.imageUrl}
-          alt={article.title}
+          alt={article.altText || article.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />

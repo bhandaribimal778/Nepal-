@@ -14,6 +14,16 @@ export interface CategoryInfo {
   name: string;
 }
 
+export interface CategoryItem {
+  id: string;
+  slug: string;
+  name: string;
+  name_en?: string;
+  description?: string;
+  is_active?: boolean;
+  display_order?: number;
+}
+
 export interface ArticleComment {
   id: string;
   author: string;
@@ -24,19 +34,25 @@ export interface ArticleComment {
 export interface Article {
   id: string;
   title: string;
+  slug?: string;
   summary: string;
   content: string[];
   category: NewsCategory;
   categoryLabel: string;
+  category_id?: string;
   author: string;
   authorRole: string;
   publishedAt: string;
   readTimeMinutes: number;
   imageUrl: string;
+  altText?: string;
+  status?: 'draft' | 'published' | 'archived';
   isBreaking?: boolean;
   isFeatured?: boolean;
   viewCount?: number;
   tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type PageRoute = 

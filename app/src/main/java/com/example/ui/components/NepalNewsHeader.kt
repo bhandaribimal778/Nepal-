@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.UserProfile
 import com.example.ui.theme.NepalCrimson
 import com.example.ui.theme.NepalGold
 import com.example.ui.theme.NepalNavy
@@ -28,7 +29,8 @@ import com.example.ui.theme.NepalNavySurface
 fun NepalNewsHeader(
     onSearchClick: () -> Unit,
     onSavedClick: () -> Unit,
-    onAdminClick: () -> Unit = {},
+    onProfileClick: () -> Unit,
+    userProfile: UserProfile? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -159,20 +161,35 @@ fun NepalNewsHeader(
                         )
                     }
 
+                    // Profile / Account Button
                     IconButton(
-                        onClick = onAdminClick,
+                        onClick = onProfileClick,
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(NepalNavySurface)
-                            .testTag("header_admin_button")
+                            .background(
+                                if (userProfile != null) NepalCrimson else NepalNavySurface
+                            )
+                            .testTag("header_profile_button")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "व्यवस्थापक प्यानल",
-                            tint = NepalCrimson,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        if (userProfile != null) {
+                            val initial = userProfile.fullName.trim().firstOrNull()?.uppercaseChar()
+                                ?: userProfile.email.trim().firstOrNull()?.uppercaseChar()
+                                ?: 'U'
+                            Text(
+                                text = initial.toString(),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "प्रयोगकर्ता खाता / लगइन",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
