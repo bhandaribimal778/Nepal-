@@ -24,6 +24,9 @@ class NewsViewModel : ViewModel() {
     private val _selectedCategory = MutableStateFlow(NewsCategory.ALL)
     val selectedCategory: StateFlow<NewsCategory> = _selectedCategory.asStateFlow()
 
+    private val _allArticles = MutableStateFlow<List<Article>>(DevelopmentFixtures.ARTICLES)
+    val allArticles: StateFlow<List<Article>> = _allArticles.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -125,9 +128,11 @@ class NewsViewModel : ViewModel() {
                 _uiState.value = NewsUiState.Error("इन्टरनेट जडान वा सर्भरमा समस्या देखियो। कृपया केही समयपछि पुनः प्रयास गर्नुहोस्।")
             } else {
                 val articles = com.example.data.SupabaseNewsRepository.getPublishedArticles()
-                val breaking = articles.filter { it.isBreaking }
-                val featured = articles.firstOrNull { it.isFeatured } ?: articles.firstOrNull()
-                val latest = articles.filter { !it.isFeatured }
+                val mergedPool = if (articles.isNotEmpty()) (articles + DevelopmentFixtures.ARTICLES).distinctBy { it.id } else DevelopmentFixtures.ARTICLES
+                _allArticles.value = mergedPool
+                val breaking = mergedPool.filter { it.isBreaking }
+                val featured = mergedPool.firstOrNull { it.isFeatured } ?: mergedPool.firstOrNull()
+                val latest = mergedPool.filter { it.id != featured?.id }
                 _uiState.value = NewsUiState.Success(
                     breakingNews = breaking,
                     featuredArticle = featured,
@@ -203,7 +208,7 @@ class NewsViewModel : ViewModel() {
     }
 
     fun getFilteredArticles(): List<Article> {
-        val all = DevelopmentFixtures.ARTICLES
+        val all = _allArticles.value
         val cat = _selectedCategory.value
         return if (cat == NewsCategory.ALL) all else all.filter { it.category == cat }
     }
@@ -211,7 +216,7 @@ class NewsViewModel : ViewModel() {
     fun getSearchResults(): List<Article> {
         val query = _searchQuery.value.trim().lowercase()
         if (query.isEmpty()) return emptyList()
-        return DevelopmentFixtures.ARTICLES.filter { article ->
+        return _allArticles.value.filter { article ->
             article.title.lowercase().contains(query) ||
             article.summary.lowercase().contains(query) ||
             article.author.lowercase().contains(query) ||
@@ -222,6 +227,7 @@ class NewsViewModel : ViewModel() {
 
     fun getSavedArticles(): List<Article> {
         val saved = _bookmarkedIds.value
-        return DevelopmentFixtures.ARTICLES.filter { saved.contains(it.id) }
+        val pool = (_allArticles.value + DevelopmentFixtures.ARTICLES).distinctBy { it.id }
+        return pool.filter { saved.contains(it.id) }
     }
 }
