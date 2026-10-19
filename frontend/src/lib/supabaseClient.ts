@@ -168,9 +168,13 @@ export async function uploadArticleCover(
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
       const msg = errData.message || errData.error || response.statusText;
+      let nepaliHelp = `स्टोरेज अपलोड त्रुटि (${msg})।`;
+      if (msg.includes('row-level security') || msg.includes('Bucket not found') || msg.includes('NoSuchBucket') || response.status === 403 || response.status === 404) {
+        nepaliHelp = `Supabase मा 'article-covers' बकेट बनेको छैन वा RLS नीति बाँकी छ। कृपया तलको SQL कमाण्ड चलाउनुहोस् वा सिधै फोटोको लिङ्क (URL) राख्नुहोस्।`;
+      }
       return { 
         url: '', 
-        error: `स्टोरेजमा अपलोड असफल भयो (${msg})। कृपया Supabase मा 'article-covers' बकेट बनेको सुनिश्चित गर्नुहोस्।` 
+        error: nepaliHelp 
       };
     }
 

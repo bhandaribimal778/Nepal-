@@ -4,7 +4,7 @@ import {
   Search, RefreshCw, X, Shield, Globe, Upload, Image, 
   AlertTriangle, ChevronLeft, ChevronRight, Eye, Star,
   Check, Filter, FileText, Users, BarChart3, Newspaper,
-  UserCheck, ShieldAlert, Sparkles, ExternalLink
+  UserCheck, ShieldAlert, Sparkles, ExternalLink, Copy, HelpCircle, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { AuthSession, SupabaseAuth, UserProfile } from '../lib/supabaseAuth';
 import { 
@@ -75,6 +75,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // Image Upload State
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showStorageGuide, setShowStorageGuide] = useState(false);
+  const [copiedStorageSql, setCopiedStorageSql] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Fetch Categories on Mount
@@ -1088,20 +1090,147 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 </div>
 
                 {uploadError && (
-                  <p className="text-xs text-red-400 font-medium">{uploadError}</p>
+                  <div className="p-3 bg-red-950/80 border border-red-800 rounded-xl space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs text-red-300 font-semibold leading-relaxed">{uploadError}</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowStorageGuide(!showStorageGuide)}
+                        className="text-[11px] text-red-200 underline font-bold shrink-0 hover:text-white"
+                      >
+                        {showStorageGuide ? 'गाईड बन्द गर्नुहोस्' : 'सेटअप गाईड हेर्नुहोस्'}
+                      </button>
+                    </div>
+                  </div>
                 )}
 
-                <input
-                  type="text"
-                  value={formImageUrl}
-                  onChange={(e) => setFormImageUrl(e.target.value)}
-                  placeholder="तस्विरको सिधा URL..."
-                  className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-red-500 font-mono"
-                />
+                {/* Storage Bucket Setup Accordion */}
+                {(showStorageGuide || uploadError) && (
+                  <div className="p-3.5 bg-slate-900 border border-amber-800/80 rounded-xl space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-amber-300 font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <HelpCircle size={14} className="text-amber-400" />
+                        Supabase मा 'article-covers' बकेट कसरी बनाउने?
+                      </span>
+                      <a
+                        href="https://supabase.com/dashboard/project/yaawyaimhhfqpnexuxgb/sql"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1 underline"
+                      >
+                        SQL Editor खोल्नुहोस्
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                    <p className="text-slate-300 text-[11px]">
+                      तलको १-क्लिक SQL कपी गरी Supabase SQL Editor मा पेस्ट गरेर <strong>Run</strong> थिच्नुहोस्:
+                    </p>
+                    <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-[10px] text-slate-300 overflow-x-auto relative border border-slate-800">
+                      <code>{`INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('article-covers', 'article-covers', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public View Article Covers" ON storage.objects;
+CREATE POLICY "Public View Article Covers" ON storage.objects FOR SELECT USING (bucket_id = 'article-covers');
+
+DROP POLICY IF EXISTS "Authenticated Upload Article Covers" ON storage.objects;
+CREATE POLICY "Authenticated Upload Article Covers" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'article-covers');
+
+DROP POLICY IF EXISTS "Authenticated Update Article Covers" ON storage.objects;
+CREATE POLICY "Authenticated Update Article Covers" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'article-covers');
+
+DROP POLICY IF EXISTS "Authenticated Delete Article Covers" ON storage.objects;
+CREATE POLICY "Authenticated Delete Article Covers" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'article-covers');`}</code>
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sql = `INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('article-covers', 'article-covers', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public View Article Covers" ON storage.objects;
+CREATE POLICY "Public View Article Covers" ON storage.objects FOR SELECT USING (bucket_id = 'article-covers');
+
+DROP POLICY IF EXISTS "Authenticated Upload Article Covers" ON storage.objects;
+CREATE POLICY "Authenticated Upload Article Covers" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'article-covers');
+
+DROP POLICY IF EXISTS "Authenticated Update Article Covers" ON storage.objects;
+CREATE POLICY "Authenticated Update Article Covers" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'article-covers');
+
+DROP POLICY IF EXISTS "Authenticated Delete Article Covers" ON storage.objects;
+CREATE POLICY "Authenticated Delete Article Covers" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'article-covers');`;
+                            navigator.clipboard.writeText(sql);
+                            setCopiedStorageSql(true);
+                            setTimeout(() => setCopiedStorageSql(false), 2500);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-sans font-semibold transition cursor-pointer"
+                        >
+                          {copiedStorageSql ? (
+                            <>
+                              <Check size={12} className="text-emerald-400" />
+                              कपी भयो!
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={12} />
+                              Storage SQL कपी गर्नुहोस्
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[11px] text-slate-400">तस्विरको सिधा लिङ्क (URL) हाल्नुहोस् वा तलबाट छान्नुहोस्:</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={formImageUrl}
+                    onChange={(e) => setFormImageUrl(e.target.value)}
+                    placeholder="उदा: https://images.unsplash.com/..."
+                    className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-red-500 font-mono"
+                  />
+                  {/* Quick Preset Photo Buttons */}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <span className="text-[10px] text-slate-500">द्रुत तस्विर:</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormImageUrl('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition"
+                    >
+                      काठमाडौँ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormImageUrl('https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=1200&q=80')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition"
+                    >
+                      हिमाल
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormImageUrl('https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition"
+                    >
+                      राजनीति
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormImageUrl('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition"
+                    >
+                      खेलकुद
+                    </button>
+                  </div>
+                </div>
 
                 {formImageUrl && (
-                  <div className="relative w-full h-36 rounded-lg overflow-hidden border border-slate-700 bg-slate-900">
-                    <img src={formImageUrl} alt="" className="w-full h-full object-cover" />
+                  <div className="relative w-full h-36 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 mt-2">
+                    <img src={formImageUrl} alt="कभर प्रिभ्यु" className="w-full h-full object-cover" />
                   </div>
                 )}
               </div>
