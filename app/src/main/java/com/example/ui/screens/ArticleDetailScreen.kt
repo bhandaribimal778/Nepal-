@@ -150,8 +150,9 @@ fun ArticleDetailScreen(
                             .background(NepalCrimson)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
+                        val badgeText = if (article.id == "art-snow") "राष्ट्रिय" else article.category.nepaliName
                         Text(
-                            text = article.category.nepaliName,
+                            text = badgeText,
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
@@ -305,7 +306,7 @@ fun ArticleDetailScreen(
                                 color = NepalNavy
                             )
                             Text(
-                                text = "२:४५ मिनेट",
+                                text = "2:45",
                                 fontSize = 11.sp,
                                 color = Color(0xFF64748B)
                             )
@@ -362,7 +363,7 @@ fun ArticleDetailScreen(
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "मौसम विभागको चेतावनी: पश्चिमी न्यून चाप सक्रिय",
+                                        text = "मौसम विभागको चेतावनी: पश्चिमी वायु सक्रिय",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         maxLines = 2,

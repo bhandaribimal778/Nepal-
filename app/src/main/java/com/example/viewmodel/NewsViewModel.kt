@@ -27,7 +27,9 @@ class NewsViewModel : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _bookmarkedIds = MutableStateFlow<Set<String>>(setOf("art-1", "art-3"))
+    private val _bookmarkedIds = MutableStateFlow<Set<String>>(
+        setOf("art-budget", "art-snow", "art-cricket", "art-traffic")
+    )
     val bookmarkedIds: StateFlow<Set<String>> = _bookmarkedIds.asStateFlow()
 
     private val _selectedArticle = MutableStateFlow<Article?>(null)

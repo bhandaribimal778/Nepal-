@@ -62,6 +62,13 @@ fun CategoryScreen(
         CategoryGridItem(NewsCategory.PROVINCE, "प्रदेश", Icons.Default.Map, Color(0xFF4F46E5))
     )
 
+    val popularArticles = androidx.compose.runtime.remember(articles) {
+        val preferred = listOf("art-politics-na", "art-snow", "art-training").mapNotNull { id ->
+            articles.find { it.id == id }
+        }
+        if (preferred.isNotEmpty()) preferred else articles.take(3)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -204,7 +211,6 @@ fun CategoryScreen(
             }
 
             // Popular News Items List (horizontal card items as shown in Screen 2)
-            val popularArticles = articles.take(4)
             items(popularArticles.size) { index ->
                 val article = popularArticles[index]
                 Card(

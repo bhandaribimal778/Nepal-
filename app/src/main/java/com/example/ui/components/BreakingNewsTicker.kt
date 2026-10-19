@@ -68,23 +68,15 @@ fun BreakingNewsTicker(
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Crimson Badge with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            // Crimson Badge "ब्रेकिङ न्यूज"
+            Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .background(NepalCrimson)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ElectricBolt,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(14.dp)
-                )
                 Text(
-                    text = "ताजा अपडेट",
+                    text = "ब्रेकिङ न्यूज",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
