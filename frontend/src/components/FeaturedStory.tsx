@@ -63,8 +63,12 @@ export const FeaturedStory: React.FC<FeaturedStoryProps> = ({
 
         {/* Bottom Headline on Hero */}
         <div className="absolute bottom-4 left-4 right-4 text-white">
-          <p className="text-xs text-slate-300 mb-1">
-            {article.publishedAt} • {article.readTimeMinutes} मिनेट पढाइ
+          <p className="text-xs text-slate-300 mb-1 flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-amber-300">{article.relativeTime || 'हालसालै'}</span>
+            <span>•</span>
+            <span className="text-slate-300">{article.publishedAt}</span>
+            <span>•</span>
+            <span>{article.readTimeMinutes} मिनेट पढाइ</span>
           </p>
           <h2 className="text-xl md:text-3xl font-bold leading-tight line-clamp-2 group-hover:text-red-200 transition-colors">
             {article.title}

@@ -3,35 +3,84 @@ import { Article, NewsCategory, PageRoute } from './types/news';
 import { FIXTURE_ARTICLES } from './fixtures/newsFixtures';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
+import { BreakingNewsTicker } from './components/BreakingNewsTicker';
 import { HomePage } from './pages/HomePage';
 import { CategoryPage } from './pages/CategoryPage';
 import { SearchPage } from './pages/SearchPage';
 import { ArticleDetailPage } from './pages/ArticleDetailPage';
-import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminLoginPage } from './pages/AdminLoginPage';
 import { UserAuthModal } from './components/UserAuthModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { NewsCard } from './components/NewsCard';
 import { EmptyState } from './components/EmptyState';
-import { LoadingSkeleton } from './components/LoadingSkeleton';
-import { ErrorState } from './components/ErrorState';
-import { getPublishedArticles } from './lib/supabaseClient';
 import { AuthSession, SupabaseAuth, UserProfile } from './lib/supabaseAuth';
-import { Shield, CheckCircle, Info } from 'lucide-react';
+import { getPublishedArticles } from './lib/supabaseClient';
 
 export const App: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<PageRoute>({ type: 'home' });
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('all');
-  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set(['art-1', 'art-3']));
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('nepal_news_bookmarks');
+      return saved ? new Set(JSON.parse(saved)) : new Set(['art-1', 'art-3']);
+    } catch {
+      return new Set(['art-1', 'art-3']);
+    }
+  });
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
   const [articles, setArticles] = useState<Article[]>(FIXTURE_ARTICLES);
   const [adminSession, setAdminSession] = useState<AuthSession | null>(() => SupabaseAuth.getSession());
   const [userProfile, setUserProfile] = useState<UserProfile | null>(() => SupabaseAuth.getUserProfile());
 
-  // User Auth Modal State
+  // Dark Mode State
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('nepal_news_theme') === 'dark';
+  });
+
+  // Language State
+  const [isEnglish, setIsEnglish] = useState<boolean>(() => {
+    return localStorage.getItem('nepal_news_lang') === 'en';
+  });
+
+  // Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
+
+  // Toggle Dark Mode
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      localStorage.setItem('nepal_news_theme', next ? 'dark' : 'light');
+      if (next) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      return next;
+    });
+  };
+
+  // Toggle Language
+  const toggleLanguage = () => {
+    setIsEnglish((prev) => {
+      const next = !prev;
+      localStorage.setItem('nepal_news_lang', next ? 'en' : 'ne');
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   const showToast = (text: string, type: 'success' | 'info' = 'success') => {
     setToastMessage({ text, type });
@@ -87,6 +136,7 @@ export const App: React.FC = () => {
       } else {
         next.add(id);
       }
+      localStorage.setItem('nepal_news_bookmarks', JSON.stringify(Array.from(next)));
       return next;
     });
   };
@@ -118,94 +168,107 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleAuthSuccess = (profile: UserProfile, isNewRegistration?: boolean) => {
-    setUserProfile(profile);
-    const sess = SupabaseAuth.getSession();
-    setAdminSession(sess);
-    
-    if (isNewRegistration) {
-      showToast(`स्वागत छ ${profile.full_name || ''}! तपाईंको नयाँ खाता सफलतापूर्वक तयार भयो।`, 'success');
-    } else {
-      showToast(`नमस्ते ${profile.full_name || 'पाठक'}! तपाईं सफलतापूर्वक लगइन हुनुभयो।`, 'success');
-    }
-
-    if (profile.role === 'admin' && currentRoute.type === 'admin-login') {
-      setCurrentRoute({ type: 'admin-dashboard' });
-    }
-  };
-
-  const selectedArticle =
-    currentRoute.type === 'article'
-      ? articles.find((a) => a.id === currentRoute.articleId) || articles[0]
-      : null;
+  const selectedArticle = currentRoute.type === 'article' 
+    ? articles.find((a) => a.id === currentRoute.articleId) 
+    : undefined;
 
   const savedArticles = articles.filter((a) => bookmarkedIds.has(a.id));
 
-  // Determine if on admin portal screens
-  const isAdminView = currentRoute.type === 'admin-login' || currentRoute.type === 'admin-dashboard';
+  const isAdminView = currentRoute.type === 'admin-dashboard' || currentRoute.type === 'admin-login';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
+      isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'
+    }`}>
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 animate-bounce shadow-2xl">
-          <div className={`px-4 py-3 rounded-2xl flex items-center gap-3 text-xs font-bold text-white shadow-xl ${
+        <div className="fixed bottom-6 right-6 z-50 animate-bounce">
+          <div className={`px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold text-white flex items-center gap-2 ${
             toastMessage.type === 'success' ? 'bg-emerald-600' : 'bg-slate-800'
           }`}>
-            {toastMessage.type === 'success' ? <CheckCircle size={16} /> : <Info size={16} />}
             <span>{toastMessage.text}</span>
           </div>
         </div>
       )}
 
-      {/* User Login & Registration Modal */}
+      {/* Main Header (With Live Digital Clock, BS Calendar, Dark Mode & Language Toggles) */}
+      {!isAdminView && (
+        <>
+          <Header
+            onSearchClick={() => setCurrentRoute({ type: 'search' })}
+            onSavedClick={() => setCurrentRoute({ type: 'saved' })}
+            onAdminClick={() => setCurrentRoute({ type: 'admin-dashboard' })}
+            onAuthClick={() => {
+              setAuthModalMode('login');
+              setIsAuthModalOpen(true);
+            }}
+            onLogoutClick={handleLogout}
+            onProfileClick={() => setIsProfileModalOpen(true)}
+            onLogoClick={() => setCurrentRoute({ type: 'home' })}
+            savedCount={bookmarkedIds.size}
+            userProfile={userProfile}
+            isAdminLoggedIn={Boolean(adminSession && userProfile?.role === 'admin')}
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={toggleDarkMode}
+            isEnglish={isEnglish}
+            onToggleLanguage={toggleLanguage}
+          />
+
+          {/* Navigation Bar */}
+          <Navigation
+            currentRoute={currentRoute}
+            onNavigate={(route) => setCurrentRoute(route)}
+            selectedCategory={selectedCategory}
+            onCategorySelect={(cat) => {
+              setSelectedCategory(cat);
+              if (cat === 'all') {
+                setCurrentRoute({ type: 'home' });
+              } else {
+                setCurrentRoute({ type: 'category', category: cat });
+              }
+            }}
+          />
+
+          {/* Breaking News Ticker */}
+          <BreakingNewsTicker
+            articles={articles}
+            onArticleClick={navigateToArticle}
+          />
+        </>
+      )}
+
+      {/* User Authentication Modal (Login / Register) */}
       <UserAuthModal
         isOpen={isAuthModalOpen}
-        initialMode={authModalMode}
         onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
+        initialMode={authModalMode}
+        onAuthSuccess={(profile) => {
+          const sess = SupabaseAuth.getSession();
+          setAdminSession(sess);
+          setUserProfile(profile);
+          showToast(`नमस्ते ${profile.full_name || 'पाठक'}! तपाईं सफलतापूर्वक लगइन हुनुभयो।`, 'success');
+        }}
       />
 
-      {/* Public Header (only shown outside admin dashboard) */}
-      {!isAdminView && (
-        <Header
-          onSearchClick={() => setCurrentRoute({ type: 'search' })}
-          onSavedClick={() => setCurrentRoute({ type: 'saved' })}
-          onAdminClick={() => {
-            if (adminSession && userProfile?.role === 'admin') {
-              setCurrentRoute({ type: 'admin-dashboard' });
-            } else {
-              setCurrentRoute({ type: 'admin-login' });
-            }
-          }}
-          onAuthClick={() => {
-            setAuthModalMode('login');
-            setIsAuthModalOpen(true);
-          }}
-          onLogoutClick={handleLogout}
-          savedCount={bookmarkedIds.size}
+      {/* User Profile & Account Settings Modal (Profile name, avatar, account deletion) */}
+      {userProfile && (
+        <UserProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
           userProfile={userProfile}
-          isAdminLoggedIn={Boolean(adminSession && userProfile?.role === 'admin')}
-        />
-      )}
-
-      {/* Public Category Navigation (only shown outside admin dashboard) */}
-      {!isAdminView && (
-        <Navigation
-          currentRoute={currentRoute}
-          onNavigate={setCurrentRoute}
-          selectedCategory={selectedCategory}
-          onCategorySelect={(cat) => {
-            setSelectedCategory(cat);
-            if (currentRoute.type !== 'home') {
-              setCurrentRoute({ type: 'category', category: cat });
-            }
+          session={adminSession}
+          savedCount={bookmarkedIds.size}
+          onProfileUpdated={(updated) => {
+            setUserProfile(updated);
+            showToast('प्रोफाइल विवरण अपडेट भयो!', 'success');
           }}
+          onLogout={handleLogout}
+          onNavigateToSaved={() => setCurrentRoute({ type: 'saved' })}
         />
       )}
 
+      {/* Main Body */}
       <main className="flex-1">
-        {/* Admin Login Route */}
         {currentRoute.type === 'admin-login' && (
           <AdminLoginPage
             onLoginSuccess={() => {
@@ -214,149 +277,124 @@ export const App: React.FC = () => {
               const prof = SupabaseAuth.getUserProfile();
               setUserProfile(prof);
               setCurrentRoute({ type: 'admin-dashboard' });
-              showToast('व्यवस्थापक प्यानलमा स्वागत छ!', 'success');
             }}
             onBackToHome={() => setCurrentRoute({ type: 'home' })}
           />
         )}
 
-        {/* Protected Admin Dashboard Route */}
-        {currentRoute.type === 'admin-dashboard' && (
-          adminSession ? (
-            <AdminDashboardPage
-              session={adminSession}
-              onLogout={handleLogout}
-              onViewPublicSite={() => {
-                loadData();
-                setCurrentRoute({ type: 'home' });
-              }}
-            />
-          ) : (
-            <AdminLoginPage
-              onLoginSuccess={() => {
-                const sess = SupabaseAuth.getSession();
-                setAdminSession(sess);
-                const prof = SupabaseAuth.getUserProfile();
-                setUserProfile(prof);
-                setCurrentRoute({ type: 'admin-dashboard' });
-              }}
-              onBackToHome={() => setCurrentRoute({ type: 'home' })}
-            />
-          )
+        {currentRoute.type === 'admin-dashboard' && adminSession && (
+          <AdminDashboardPage
+            session={adminSession}
+            onLogout={handleLogout}
+            onViewPublicSite={() => {
+              window.location.hash = '';
+              setCurrentRoute({ type: 'home' });
+            }}
+          />
         )}
 
-        {/* Public Routes */}
         {!isAdminView && (
-          isLoading ? (
-            <LoadingSkeleton />
-          ) : hasError ? (
-            <ErrorState
-              message="इन्टरनेट वा सर्भरमा समस्या देखिएको छ। कृपया केही समयपछि पुनः प्रयास गर्नुहोस्।"
-              onRetry={loadData}
-            />
-          ) : (
-            <>
-              {currentRoute.type === 'home' && (
-                <HomePage
-                  articles={articles}
-                  selectedCategory={selectedCategory}
-                  bookmarkedIds={bookmarkedIds}
-                  onArticleClick={navigateToArticle}
-                  onBookmarkToggle={handleBookmarkToggle}
-                  onShare={handleShare}
-                  onResetCategory={() => setSelectedCategory('all')}
-                />
-              )}
+          <>
+            {currentRoute.type === 'home' && (
+              <HomePage
+                articles={articles}
+                selectedCategory={selectedCategory}
+                bookmarkedIds={bookmarkedIds}
+                onArticleClick={navigateToArticle}
+                onBookmarkToggle={handleBookmarkToggle}
+                onShare={handleShare}
+                onResetCategory={() => setSelectedCategory('all')}
+              />
+            )}
 
-              {currentRoute.type === 'category' && (
-                <CategoryPage
-                  category={currentRoute.category}
-                  articles={articles}
-                  bookmarkedIds={bookmarkedIds}
-                  onArticleClick={navigateToArticle}
-                  onBookmarkToggle={handleBookmarkToggle}
-                  onSelectCategory={(cat) => {
-                    setSelectedCategory(cat);
-                    setCurrentRoute({ type: 'category', category: cat });
-                  }}
-                />
-              )}
+            {currentRoute.type === 'category' && (
+              <CategoryPage
+                category={currentRoute.category}
+                articles={articles}
+                bookmarkedIds={bookmarkedIds}
+                onArticleClick={navigateToArticle}
+                onBookmarkToggle={handleBookmarkToggle}
+                onSelectCategory={(cat) => {
+                  setSelectedCategory(cat);
+                  setCurrentRoute({ type: 'category', category: cat });
+                }}
+              />
+            )}
 
-              {currentRoute.type === 'search' && (
-                <SearchPage
-                  articles={articles}
-                  bookmarkedIds={bookmarkedIds}
-                  onArticleClick={navigateToArticle}
-                  onBookmarkToggle={handleBookmarkToggle}
-                  initialQuery={currentRoute.query}
-                />
-              )}
+            {currentRoute.type === 'search' && (
+              <SearchPage
+                articles={articles}
+                bookmarkedIds={bookmarkedIds}
+                onArticleClick={navigateToArticle}
+                onBookmarkToggle={handleBookmarkToggle}
+                initialQuery={currentRoute.query}
+              />
+            )}
 
-              {currentRoute.type === 'saved' && (
-                <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20">
-                  <div className="border-b border-slate-200 pb-3 flex justify-between items-end">
-                    <div>
-                      <h2 className="text-2xl font-black text-slate-900 border-l-4 border-red-600 pl-3">
-                        सुरक्षित गरिएका समाचारहरू
-                      </h2>
-                      <p className="text-xs text-slate-500 mt-1">
-                        तपाईंले पछि पढ्नका लागि सञ्चय गरेका समाचारहरू
-                      </p>
-                    </div>
-
-                    {!userProfile && (
-                      <button
-                        onClick={() => {
-                          setAuthModalMode('login');
-                          setIsAuthModalOpen(true);
-                        }}
-                        className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        लगइन गरी सुरक्षित गर्नुहोस्
-                      </button>
-                    )}
+            {currentRoute.type === 'saved' && (
+              <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex justify-between items-end">
+                  <div>
+                    <h2 className="text-2xl font-black border-l-4 border-red-600 pl-3">
+                      {isEnglish ? 'Saved News Articles' : 'सुरक्षित गरिएका समाचारहरू'}
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {isEnglish ? 'Articles saved to your account for offline and later reading' : 'तपाईंले पछि पढ्नका लागि सञ्चय गरेका समाचारहरू'}
+                    </p>
                   </div>
 
-                  {savedArticles.length === 0 ? (
-                    <EmptyState
-                      title="कुनै समाचार सुरक्षित छैन"
-                      message="समाचार पढ्दै गर्दा बुकमार्क आइकन थिचेर सुरक्षित राख्न सक्नुहुन्छ।"
-                      actionText="ताजा समाचार हेर्नुहोस्"
-                      onAction={() => setCurrentRoute({ type: 'home' })}
-                    />
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {savedArticles.map((art) => (
-                        <NewsCard
-                          key={art.id}
-                          article={art}
-                          isBookmarked={true}
-                          onArticleClick={navigateToArticle}
-                          onBookmarkToggle={handleBookmarkToggle}
-                        />
-                      ))}
-                    </div>
+                  {!userProfile && (
+                    <button
+                      onClick={() => {
+                        setAuthModalMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {isEnglish ? 'Sign In to Save' : 'लगइन गरी सुरक्षित गर्नुहोस्'}
+                    </button>
                   )}
                 </div>
-              )}
 
-              {currentRoute.type === 'article' && selectedArticle && (
-                <ArticleDetailPage
-                  article={selectedArticle}
-                  allArticles={articles}
-                  isBookmarked={bookmarkedIds.has(selectedArticle.id)}
-                  onBack={() => setCurrentRoute({ type: 'home' })}
-                  onBookmarkToggle={handleBookmarkToggle}
-                  onShare={handleShare}
-                  onArticleClick={navigateToArticle}
-                />
-              )}
-            </>
-          )
+                {savedArticles.length === 0 ? (
+                  <EmptyState
+                    title={isEnglish ? 'No saved articles yet' : 'कुनै समाचार सुरक्षित छैन'}
+                    message={isEnglish ? 'Tap the bookmark icon on any news to save it here.' : 'समाचार पढ्दै गर्दा बुकमार्क आइकन थिचेर सुरक्षित राख्न सक्नुहुन्छ।'}
+                    actionText={isEnglish ? 'Browse Latest News' : 'ताजा समाचार हेर्नुहोस्'}
+                    onAction={() => setCurrentRoute({ type: 'home' })}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {savedArticles.map((art) => (
+                      <NewsCard
+                        key={art.id}
+                        article={art}
+                        isBookmarked={true}
+                        onArticleClick={navigateToArticle}
+                        onBookmarkToggle={handleBookmarkToggle}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentRoute.type === 'article' && selectedArticle && (
+              <ArticleDetailPage
+                article={selectedArticle}
+                allArticles={articles}
+                isBookmarked={bookmarkedIds.has(selectedArticle.id)}
+                onBack={() => setCurrentRoute({ type: 'home' })}
+                onBookmarkToggle={handleBookmarkToggle}
+                onShare={handleShare}
+                onArticleClick={navigateToArticle}
+              />
+            )}
+          </>
         )}
       </main>
 
-      {/* Footer with Admin Portal & User Links */}
+      {/* Footer */}
       {!isAdminView && (
         <footer className="bg-slate-950 text-slate-400 text-xs py-8 border-t border-slate-800">
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">

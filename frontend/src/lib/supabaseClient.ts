@@ -5,6 +5,7 @@
 
 import { Article, NewsCategory, CategoryItem } from '../types/news';
 import { FIXTURE_ARTICLES } from '../fixtures/newsFixtures';
+import { formatArticlePublishedAt } from './nepaliCalendar';
 
 export const SUPABASE_URL = 
   (import.meta as any).env?.VITE_SUPABASE_URL || 'https://yaawyaimhhfqpnexuxgb.supabase.co';
@@ -68,27 +69,32 @@ export async function getPublishedArticles(): Promise<Article[]> {
       return FIXTURE_ARTICLES;
     }
 
-    return data.map((item: any): Article => ({
-      id: item.id,
-      title: item.title,
-      slug: item.slug,
-      summary: item.summary,
-      content: Array.isArray(item.content) ? item.content : [item.content],
-      category: (item.categories?.slug || 'politics') as NewsCategory,
-      categoryLabel: item.categories?.name || 'समाचार',
-      category_id: item.category_id,
-      author: 'नेपाल न्यूज डेस्क',
-      authorRole: 'सम्पादकीय टोली',
-      publishedAt: item.published_at ? new Date(item.published_at).toLocaleDateString('ne-NP') : '१० मिनेट अगाडि',
-      readTimeMinutes: item.read_time_minutes || 3,
-      imageUrl: item.image_url || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
-      altText: item.alt_text || item.title || 'नेपाल न्यूज समाचार फोटो',
-      status: item.status || 'published',
-      isBreaking: Boolean(item.is_breaking),
-      isFeatured: Boolean(item.is_featured),
-      viewCount: item.view_count || 0,
-      tags: item.tags || []
-    }));
+    return data.map((item: any): Article => {
+      const pubInfo = formatArticlePublishedAt(item.published_at);
+      return {
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        summary: item.summary,
+        content: Array.isArray(item.content) ? item.content : [item.content],
+        category: (item.categories?.slug || 'politics') as NewsCategory,
+        categoryLabel: item.categories?.name || 'समाचार',
+        category_id: item.category_id,
+        author: 'नेपाल न्यूज डेस्क',
+        authorRole: 'सम्पादकीय टोली',
+        publishedAt: pubInfo.fullDateTime || 'नेपाल समय',
+        published_at: item.published_at,
+        relativeTime: pubInfo.relativeTime,
+        readTimeMinutes: item.read_time_minutes || 3,
+        imageUrl: item.image_url || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
+        altText: item.alt_text || item.title || 'नेपाल न्यूज समाचार फोटो',
+        status: item.status || 'published',
+        isBreaking: Boolean(item.is_breaking),
+        isFeatured: Boolean(item.is_featured),
+        viewCount: item.view_count || 0,
+        tags: item.tags || []
+      };
+    });
   } catch (error) {
     console.error('Error querying Supabase articles:', error);
     return FIXTURE_ARTICLES;

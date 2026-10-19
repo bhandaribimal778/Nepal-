@@ -58,8 +58,14 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
-          <span>{article.publishedAt}</span>
-          <span>{article.readTimeMinutes} मिनेट पढाइ</span>
+          <span 
+            className="flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
+            title={article.publishedAt}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            {article.relativeTime || article.publishedAt}
+          </span>
+          <span className="text-[11px] text-slate-400">{article.readTimeMinutes} मिनेट पढाइ</span>
         </div>
       </div>
     </article>

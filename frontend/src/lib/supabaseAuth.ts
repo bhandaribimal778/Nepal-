@@ -353,11 +353,12 @@ export const SupabaseAuth = {
   /**
    * Admin: Toggle article status between 'published' and 'draft'
    */
-  async togglePublishStatus(accessToken: string, articleId: string, currentStatus: string): Promise<any> {
+  async togglePublishStatus(accessToken: string, articleId: string, currentStatus: string, existingPublishedAt?: string | null): Promise<any> {
     const isNowPublished = currentStatus !== 'published';
-    const updatePayload = {
+    const updatePayload: any = {
       status: isNowPublished ? 'published' : 'draft',
-      published_at: isNowPublished ? new Date().toISOString() : null
+      // Requirement 10: Retain original published_at if previously published; otherwise set new Date().toISOString()
+      published_at: isNowPublished ? (existingPublishedAt || new Date().toISOString()) : null
     };
 
     return this.updateArticle(accessToken, articleId, updatePayload);
@@ -440,5 +441,54 @@ export const SupabaseAuth = {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.message || 'प्रयोगकर्ताको भूमिका परिवर्तन गर्न सकिएन');
     }
+  },
+
+  /**
+   * User: Update profile name and avatar
+   */
+  async updateUserProfile(
+    accessToken: string,
+    userId: string,
+    updates: { full_name?: string; avatar_url?: string }
+  ): Promise<UserProfile> {
+    const endpoint = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`;
+    const response = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'प्रोफाइल विवरण अपडेट गर्न सकिएन');
+    }
+
+    const data = await response.json();
+    const updated = Array.isArray(data) ? data[0] : data;
+    if (updated) {
+      localStorage.setItem('nepal_news_user_profile', JSON.stringify(updated));
+    }
+    return updated;
+  },
+
+  /**
+   * User: Delete own account (clears profile and signs out)
+   */
+  async deleteUserAccount(accessToken: string, userId: string): Promise<void> {
+    const endpoint = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`;
+    await fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    await this.signOut();
   }
 };

@@ -87,9 +87,9 @@ object SupabaseNewsRepository {
                     val readTime = obj.optInt("read_time_minutes", 3)
                     val viewCount = obj.optInt("view_count", 100)
 
-                    // Extract and format published time if present
+                    // Extract and format published time into relative Nepal time
                     val publishedAtRaw = obj.optString("published_at")
-                    val publishedAtFormatted = if (publishedAtRaw.isNotBlank()) "ताजा अपडेट" else "१० मिनेट अगाडि"
+                    val publishedAtFormatted = com.example.util.NepalCalendarUtils.formatArticlePublishedAt(publishedAtRaw)
 
                     articles.add(
                         Article(

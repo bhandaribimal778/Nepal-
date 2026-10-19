@@ -43,6 +43,8 @@ export interface Article {
   author: string;
   authorRole: string;
   publishedAt: string;
+  published_at?: string | null;
+  relativeTime?: string;
   readTimeMinutes: number;
   imageUrl: string;
   altText?: string;

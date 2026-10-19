@@ -156,8 +156,15 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
             <span className="font-bold text-slate-800">✍️ {article.author}</span>
             <span>• {article.authorRole}</span>
           </div>
-          <div>
-            <span>प्रकाशित: {article.publishedAt}</span> • <span>{article.readTimeMinutes} मिनेट पढाइ</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-slate-700">प्रकाशित: {article.publishedAt}</span>
+            {article.relativeTime && (
+              <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-semibold border border-red-200">
+                {article.relativeTime}
+              </span>
+            )}
+            <span>•</span>
+            <span>{article.readTimeMinutes} मिनेट पढाइ</span>
           </div>
         </div>
       </header>

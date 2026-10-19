@@ -53,6 +53,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // Article Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
+  const [editingPublishedAt, setEditingPublishedAt] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Delete Confirmation Modal
@@ -159,6 +160,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const openCreateModal = () => {
     setEditingArticleId(null);
+    setEditingPublishedAt(null);
     setFormTitle('');
     setFormSlug('');
     setFormSummary('');
@@ -176,6 +178,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const openEditModal = (art: any) => {
     setEditingArticleId(art.id);
+    setEditingPublishedAt(art.published_at || null);
     setFormTitle(art.title || '');
     setFormSlug(art.slug || '');
     setFormSummary(art.summary || '');
@@ -281,7 +284,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       };
 
       if (activeStatus === 'published') {
-        articlePayload.published_at = new Date().toISOString();
+        // If editing an already-published article, preserve its original published_at timestamp
+        articlePayload.published_at = editingPublishedAt || new Date().toISOString();
       } else {
         articlePayload.published_at = null;
       }
@@ -312,7 +316,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleTogglePublish = async (art: any) => {
     try {
       setError(null);
-      await SupabaseAuth.togglePublishStatus(session.access_token, art.id, art.status);
+      await SupabaseAuth.togglePublishStatus(session.access_token, art.id, art.status, art.published_at);
       setSuccessMessage(
         art.status === 'published' 
           ? 'समाचार मस्यौदा (Draft) मा सारियो' 

@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +35,20 @@ fun NepalNewsHeader(
     userProfile: UserProfile? = null,
     modifier: Modifier = Modifier
 ) {
+    var liveClock by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(com.example.util.NepalCalendarUtils.getNepalLiveClock())
+    }
+    var showBikramSambat by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(false)
+    }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            liveClock = com.example.util.NepalCalendarUtils.getNepalLiveClock()
+            kotlinx.coroutines.delay(1000L)
+        }
+    }
+
     Surface(
         color = NepalNavy,
         shadowElevation = 4.dp,
@@ -41,24 +57,22 @@ fun NepalNewsHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // Top Date and Weather bar
+            // Top Live Clock, Date (Nepali Gregorian / BS) and Nepal Standard Time Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "शनिबार, १ कात्तिक २०८३ | काठमाडौँ",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontWeight = FontWeight.Medium
-                )
-
+                // Live Clock Pill with Pulsing Live Indicator
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF3B0707))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -67,10 +81,40 @@ fun NepalNewsHeader(
                             .background(NepalCrimson)
                     )
                     Text(
-                        text = "प्रत्यक्ष २४/७",
+                        text = liveClock.timeNe,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFFCA5A5),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
+                }
+
+                // Date with clickable toggle (AD Nepali vs BS)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showBikramSambat = !showBikramSambat }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (showBikramSambat) "वि.सं. ${liveClock.dateBsNe}" else liveClock.dateGregorianNe,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 11.sp
+                    )
+                    Text(
+                        text = if (showBikramSambat) "AD" else "वि.सं.",
                         style = MaterialTheme.typography.labelSmall,
                         color = NepalGold,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
                     )
                 }
             }
