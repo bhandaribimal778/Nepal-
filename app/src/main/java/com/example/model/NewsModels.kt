@@ -6,10 +6,14 @@ enum class NewsCategory(val nepaliName: String, val slug: String) {
     ECONOMY("अर्थतन्त्र", "economy"),
     SOCIETY("समाज", "society"),
     SPORTS("खेलकुद", "sports"),
-    OPINION("विचार", "opinion"),
-    WORLD("विश्व", "world"),
+    ENTERTAINMENT("मनोरञ्जन", "entertainment"),
     TECH("प्रविधि", "tech"),
-    ENTERTAINMENT("मनोरञ्जन", "entertainment");
+    HEALTH("स्वास्थ्य", "health"),
+    EDUCATION("शिक्षा", "education"),
+    WORLD("अन्तर्राष्ट्रिय", "world"),
+    LOCAL("स्थानीय", "local"),
+    PROVINCE("प्रदेश", "province"),
+    OPINION("विचार", "opinion");
 
     companion object {
         fun fromSlug(slug: String): NewsCategory {
@@ -32,7 +36,8 @@ data class Article(
     val isBreaking: Boolean = false,
     val isFeatured: Boolean = false,
     val viewCount: Int = 1200,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val location: String = "काठमाडौँ"
 )
 
 data class ArticleComment(
@@ -58,5 +63,7 @@ enum class NavigationScreen {
     SEARCH,
     SAVED,
     ARTICLE_DETAIL,
-    PROFILE
+    PROFILE,
+    NOTIFICATION_SETTINGS,
+    LOGIN_REGISTER
 }

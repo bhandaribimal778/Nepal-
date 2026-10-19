@@ -1,35 +1,32 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.data.DevelopmentFixtures
 import com.example.model.Article
-import com.example.ui.components.NewsCard
 import com.example.ui.theme.NepalCrimson
-import com.example.ui.theme.NepalCrimsonLight
-import com.example.ui.theme.NepalGold
 import com.example.ui.theme.NepalNavy
-import com.example.ui.theme.NewsBorderLight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,276 +46,86 @@ fun ArticleDetailScreen(
     onRelatedArticleClick: (Article) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val relatedArticles = allArticles.filter { it.id != article.id && it.category == article.category }.take(2)
-        .ifEmpty { allArticles.filter { it.id != article.id }.take(2) }
+    var currentFontSize by remember { mutableIntStateOf(fontSizeSp) }
+    val relatedArticles = allArticles.filter { it.id != article.id }.take(2)
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = article.category.nepaliName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = NepalNavy
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier.testTag("article_detail_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "पछाडि फर्कनुहोस्",
-                            tint = NepalNavy
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { onBookmarkToggle(article.id) },
-                        modifier = Modifier.testTag("article_detail_bookmark_button")
-                    ) {
-                        Icon(
-                            imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                            contentDescription = "बचत गर्नुहोस्",
-                            tint = if (isBookmarked) NepalGold else NepalNavy
-                        )
-                    }
-                    IconButton(
-                        onClick = { onShareClick(article) },
-                        modifier = Modifier.testTag("article_detail_share_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "साझेदारी गर्नुहोस्",
-                            tint = NepalNavy
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
-            )
-        },
-        modifier = modifier.fillMaxSize()
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color.White),
-            contentPadding = PaddingValues(bottom = 32.dp)
-        ) {
-            // Category & Published Time
-            item {
+            Surface(
+                color = Color.White,
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(NepalCrimson)
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "पछाडि",
+                            tint = NepalNavy
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = article.category.nepaliName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    Text(
-                        text = "प्रकाशित: ${article.publishedAt} | ${article.readTimeMinutes} मिनेट पढाइ",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF64748B)
-                    )
-                }
-            }
-
-            // Headline
-            item {
-                Text(
-                    text = article.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = NepalNavy,
-                    lineHeight = 32.sp,
-                    fontSize = 22.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
-
-            // Author Info Row
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(NepalNavy),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = article.author.take(1),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = article.author,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = NepalNavy,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = article.authorRole,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF64748B),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-
-            // Audio Player Bar and Text Size Bar
-            item {
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        // Font size AA button
+                        IconButton(
+                            onClick = {
+                                currentFontSize = if (currentFontSize >= 20) 14 else currentFontSize + 2
+                                onAdjustFontSize(currentFontSize)
+                            }
                         ) {
-                            // Audio listen simulator
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                IconButton(
-                                    onClick = onToggleAudio,
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(NepalCrimson)
-                                        .testTag("audio_toggle_button")
-                                ) {
-                                    Icon(
-                                        imageVector = if (isAudioPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                        contentDescription = "समाचार सुन्नुहोस्",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-
-                                Column {
-                                    Text(
-                                        text = if (isAudioPlaying) "वाचन भइरहेको छ..." else "समाचार सुन्नुहोस्",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = NepalNavy,
-                                        fontSize = 12.sp
-                                    )
-                                    Text(
-                                        text = "स्वचालित नेपाली अडियो प्लेयर",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFF64748B),
-                                        fontSize = 10.sp
-                                    )
-                                }
-                            }
-
-                            // Font size adjuster
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color.White)
-                                        .clickable { onAdjustFontSize(-2) }
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "A-",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        color = NepalNavy
-                                    )
-                                }
-
-                                Text(
-                                    text = "${fontSizeSp}px",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.Medium
-                                )
-
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color.White)
-                                        .clickable { onAdjustFontSize(2) }
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "A+",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        color = NepalNavy
-                                    )
-                                }
-                            }
+                            Text(
+                                text = "AA",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = NepalNavy
+                            )
                         }
 
-                        if (isAudioPlaying || audioProgress > 0f) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(
-                                progress = { audioProgress },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp)),
-                                color = NepalCrimson,
-                                trackColor = Color(0xFFCBD5E1)
+                        // Share button
+                        IconButton(onClick = { onShareClick(article) }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "साझेदारी",
+                                tint = NepalNavy,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Bookmark button
+                        IconButton(onClick = { onBookmarkToggle(article.id) }) {
+                            Icon(
+                                imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                contentDescription = "बचत",
+                                tint = if (isBookmarked) NepalCrimson else NepalNavy,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
                 }
             }
-
-            // Hero Image
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(Color.White)
+        ) {
+            // 1. Full-width Hero Cover Image with Nepal flag/landscape
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(230.dp)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(12.dp))
                 ) {
                     AsyncImage(
                         model = article.imageUrl,
@@ -329,169 +136,254 @@ fun ArticleDetailScreen(
                 }
             }
 
-            // Summary Lead Box
+            // 2. Article Header, Category Badge & Headline
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(NepalCrimsonLight)
-                        .padding(14.dp)
-                ) {
-                    Text(
-                        text = "सारसंक्षेप: ${article.summary}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF7F1D1D),
-                        fontSize = (fontSizeSp - 1).sp,
-                        lineHeight = (fontSizeSp + 6).sp
-                    )
-                }
-            }
-
-            // Paragraphs
-            items(article.content) { paragraph ->
-                Text(
-                    text = paragraph,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF1E293B),
-                    fontSize = fontSizeSp.sp,
-                    lineHeight = (fontSizeSp + 9).sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            // Tags
-            if (article.tags.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        article.tags.forEach { tag ->
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(Color(0xFFE2E8F0))
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "# $tag",
-                                    fontSize = 11.sp,
-                                    color = NepalNavy,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Fixture Comments Section Notice
-            item {
-                Card(
-                    shape = RoundedCornerShape(10.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                    border = CardDefaults.outlinedCardBorder(),
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // Category Badge (e.g. "राष्ट्रिय" / "राजनीति")
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(NepalCrimson)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = article.category.nepaliName,
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Main Headline
+                    Text(
+                        text = article.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 22.sp,
+                        lineHeight = 28.sp,
+                        color = NepalNavy
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Author line with red circular avatar
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(NepalCrimson),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.ChatBubbleOutline,
-                                contentDescription = null,
-                                tint = NepalCrimson,
-                                modifier = Modifier.size(18.dp)
-                            )
                             Text(
-                                text = "टिप्पणीहरू (डेभलपमेन्ट फिक्सचर)",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = NepalNavy
+                                text = "ने",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-
                         Text(
-                            text = "सूचना: Supabase ब्याकइन्ड जोडिएपछि प्रत्यक्ष रूपमा कमेन्टहरू पोस्ट गर्न सकिनेछ।",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF64748B),
-                            fontSize = 11.sp
+                            text = article.author,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.5.sp,
+                            color = NepalNavy
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "•",
+                            color = Color(0xFF94A3B8)
+                        )
 
-                        DevelopmentFixtures.COMMENTS.forEach { comment ->
-                            Column(
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = article.publishedAt,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Published Timestamp line (Screen 3 style)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "प्रकाशित: १९ असोज २०८३, 08:15",
+                            fontSize = 11.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                }
+            }
+
+            // 3. Story Paragraphs
+            items(article.content.size) { pIndex ->
+                Text(
+                    text = article.content[pIndex],
+                    fontSize = currentFontSize.sp,
+                    lineHeight = (currentFontSize + 8).sp,
+                    color = Color(0xFF1E293B),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                )
+            }
+
+            // 4. "सम्बन्धित भिडियो" (Related Video Card) - Screen 3 style
+            item {
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .clickable { onToggleAudio() }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF0F172A)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "भिडियो बजाउनुहोस्",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "सम्बन्धित भिडियो",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NepalCrimson
+                            )
+                            Text(
+                                text = "हिमाली क्षेत्रमा हिमपात",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NepalNavy
+                            )
+                            Text(
+                                text = "२:४५ मिनेट",
+                                fontSize = 11.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 5. "सम्बन्धित समाचार" (Related News) Section
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        text = "सम्बन्धित समाचार",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = NepalNavy,
+                        fontSize = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    if (relatedArticles.isNotEmpty()) {
+                        val rel = relatedArticles.first()
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onRelatedArticleClick(rel) }
+                        ) {
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(6.dp))
                                 ) {
-                                    Text(
-                                        text = comment.author,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = NepalNavy
-                                    )
-                                    Text(
-                                        text = comment.timeAgo,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFF94A3B8)
+                                    AsyncImage(
+                                        model = rel.imageUrl,
+                                        contentDescription = rel.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
-                                Text(
-                                    text = comment.content,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF334155),
-                                    fontSize = 12.sp
-                                )
-                                Divider(
-                                    color = Color(0xFFE2E8F0),
-                                    thickness = 0.5.dp,
-                                    modifier = Modifier.padding(top = 6.dp)
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "मौसम विभागको चेतावनी: पश्चिमी न्यून चाप सक्रिय",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = NepalNavy
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "३ घण्टा अघि",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Related Stories
-            if (relatedArticles.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "सम्बन्धित समाचारहरू",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = NepalNavy,
-                        fontSize = 18.sp,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-
-                items(relatedArticles) { relArticle ->
-                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                        NewsCard(
-                            article = relArticle,
-                            isBookmarked = bookmarkedIds.contains(relArticle.id),
-                            onArticleClick = onRelatedArticleClick,
-                            onBookmarkToggle = onBookmarkToggle
-                        )
-                    }
-                }
+            item {
+                Spacer(modifier = Modifier.height(30.dp))
             }
         }
     }

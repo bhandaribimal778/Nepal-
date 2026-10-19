@@ -11,12 +11,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
@@ -61,10 +61,10 @@ sealed class BottomNavItem(
     val testTag: String
 ) {
     data object Home : BottomNavItem(NavigationScreen.HOME, "गृहपृष्ठ", Icons.Filled.Home, Icons.Outlined.Home, "nav_home")
-    data object Categories : BottomNavItem(NavigationScreen.CATEGORIES, "वर्गहरू", Icons.Filled.Category, Icons.Outlined.Category, "nav_categories")
-    data object Search : BottomNavItem(NavigationScreen.SEARCH, "खोज", Icons.Filled.Search, Icons.Outlined.Search, "nav_search")
-    data object Saved : BottomNavItem(NavigationScreen.SAVED, "सुरक्षित", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder, "nav_saved")
-    data object Profile : BottomNavItem(NavigationScreen.PROFILE, "खाता", Icons.Filled.Person, Icons.Outlined.Person, "nav_profile")
+    data object Categories : BottomNavItem(NavigationScreen.CATEGORIES, "श्रेणी", Icons.Filled.GridView, Icons.Outlined.GridView, "nav_categories")
+    data object Search : BottomNavItem(NavigationScreen.SEARCH, "खोज्नुहोस्", Icons.Filled.Search, Icons.Outlined.Search, "nav_search")
+    data object Saved : BottomNavItem(NavigationScreen.SAVED, "बचत", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder, "nav_saved")
+    data object Profile : BottomNavItem(NavigationScreen.PROFILE, "प्रोफाइल", Icons.Filled.Person, Icons.Outlined.Person, "nav_profile")
 }
 
 @Composable
@@ -112,20 +112,28 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
         context.startActivity(shareIntent)
     }
 
+    val showBottomBar = currentScreen in listOf(
+        NavigationScreen.HOME,
+        NavigationScreen.CATEGORIES,
+        NavigationScreen.SEARCH,
+        NavigationScreen.SAVED,
+        NavigationScreen.PROFILE
+    )
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            if (currentScreen != NavigationScreen.ARTICLE_DETAIL) {
+            // Main Nepal News Header with logo and search/notification icons only on HOME screen
+            if (currentScreen == NavigationScreen.HOME) {
                 NepalNewsHeader(
                     onSearchClick = { viewModel.navigateTo(NavigationScreen.SEARCH) },
-                    onSavedClick = { viewModel.navigateTo(NavigationScreen.SAVED) },
-                    onProfileClick = { viewModel.navigateTo(NavigationScreen.PROFILE) },
+                    onNotificationClick = { viewModel.navigateTo(NavigationScreen.NOTIFICATION_SETTINGS) },
                     userProfile = userProfile
                 )
             }
         },
         bottomBar = {
-            if (currentScreen != NavigationScreen.ARTICLE_DETAIL) {
+            if (showBottomBar) {
                 NavigationBar(
                     containerColor = Color.White,
                     tonalElevation = 8.dp,
@@ -139,7 +147,8 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                             icon = {
                                 Icon(
                                     imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = item.title
+                                    contentDescription = item.title,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             },
                             label = {
@@ -154,7 +163,7 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                                 selectedTextColor = NepalCrimson,
                                 unselectedIconColor = Color(0xFF64748B),
                                 unselectedTextColor = Color(0xFF64748B),
-                                indicatorColor = Color(0xFFFEE2E2)
+                                indicatorColor = Color.Transparent
                             ),
                             modifier = Modifier.testTag(item.testTag)
                         )
@@ -179,6 +188,7 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                         onArticleClick = { viewModel.openArticle(it) },
                         onBookmarkToggle = { viewModel.toggleBookmark(it) },
                         onShareClick = { shareArticle(it) },
+                        onSeeAllClick = { viewModel.navigateTo(NavigationScreen.CATEGORIES) },
                         onRetry = { viewModel.loadNews() }
                     )
                 }
@@ -188,9 +198,13 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                         selectedCategory = selectedCategory,
                         articles = viewModel.getFilteredArticles(),
                         bookmarkedIds = bookmarkedIds,
-                        onCategorySelected = { viewModel.selectCategory(it) },
+                        onCategorySelected = {
+                            viewModel.selectCategory(it)
+                            viewModel.navigateTo(NavigationScreen.HOME)
+                        },
                         onArticleClick = { viewModel.openArticle(it) },
-                        onBookmarkToggle = { viewModel.toggleBookmark(it) }
+                        onBookmarkToggle = { viewModel.toggleBookmark(it) },
+                        onBackClick = { viewModel.navigateBack() }
                     )
                 }
 
@@ -201,7 +215,8 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                         bookmarkedIds = bookmarkedIds,
                         onQueryChange = { viewModel.setSearchQuery(it) },
                         onArticleClick = { viewModel.openArticle(it) },
-                        onBookmarkToggle = { viewModel.toggleBookmark(it) }
+                        onBookmarkToggle = { viewModel.toggleBookmark(it) },
+                        onBackClick = { viewModel.navigateBack() }
                     )
                 }
 
@@ -211,7 +226,8 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                         bookmarkedIds = bookmarkedIds,
                         onArticleClick = { viewModel.openArticle(it) },
                         onBookmarkToggle = { viewModel.toggleBookmark(it) },
-                        onExploreClick = { viewModel.navigateTo(NavigationScreen.HOME) }
+                        onExploreClick = { viewModel.navigateTo(NavigationScreen.HOME) },
+                        onBackClick = { viewModel.navigateBack() }
                     )
                 }
 
@@ -233,9 +249,35 @@ fun NepalNewsApp(viewModel: NewsViewModel) {
                         onNavigateToSaved = {
                             viewModel.navigateTo(NavigationScreen.SAVED)
                         },
+                        onNavigateToNotifications = {
+                            viewModel.navigateTo(NavigationScreen.NOTIFICATION_SETTINGS)
+                        },
+                        onNavigateToLoginRegister = {
+                            viewModel.navigateTo(NavigationScreen.LOGIN_REGISTER)
+                        },
                         onClearError = {
                             viewModel.clearAuthState()
                         }
+                    )
+                }
+
+                NavigationScreen.NOTIFICATION_SETTINGS -> {
+                    NotificationSettingsScreen(
+                        onBackClick = { viewModel.navigateBack() }
+                    )
+                }
+
+                NavigationScreen.LOGIN_REGISTER -> {
+                    LoginRegisterScreen(
+                        authState = authState,
+                        onLoginClick = { email, password ->
+                            viewModel.login(context, email, password)
+                        },
+                        onRegisterClick = { name, email, password ->
+                            viewModel.register(context, name, email, password)
+                        },
+                        onGuestClick = { viewModel.navigateBack() },
+                        onBackClick = { viewModel.navigateBack() }
                     )
                 }
 
